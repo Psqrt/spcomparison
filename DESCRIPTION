@@ -1,13 +1,25 @@
 Package: spcomparison
-Title: What the Package Does (One Line, Title Case)
+Title: Spatial Regression Models Selection
 Version: 0.0.0.9000
-Authors@R: 
-    person(given = "First",
-           family = "Last",
-           role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: What license it uses
+Authors@R: c(
+    person(given = "Léo",
+           family = "Dutertre",
+           email = "tsangguy@gmail.com",
+           role = c("aut", "cre")),
+    person(given = "Guy",
+           family = "Tsang",
+           role = c("aut"))
+           )
+Description: Bottom-up approach (JP LeSage, RK Pace, 2009) and mixed approach (JP Elhorst, 2010) for spatial model selection procedure.
+License: GPL-2
 Encoding: UTF-8
 LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+RoxygenNote: 7.0.0
+Imports: 
+    spatialreg,
+    stats,
+    spdep
