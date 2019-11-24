@@ -4,20 +4,38 @@
 \alias{elhorst}
 \title{Elhorst procedure}
 \usage{
-elhorst(base, modele, matrice, alpha)
+elhorst(formula, data, listw, alpha = 0.05, criterion = "RLM")
 }
 \arguments{
-\item{base}{data}
+\item{formula}{a formula object (or one that can be coerced to that class): a symbolic description of the model to be fitted.}
 
-\item{modele}{formula}
+\item{data}{a data.frame object containing the variables in the model.}
 
-\item{matrice}{weights matrix}
+\item{listw}{a listw object containing weights.}
 
-\item{alpha}{confidence level between 0 and 1}
+\item{alpha}{a numeric value providing the confidence level between 0 and 1.}
+
+\item{criterion}{either RLM (default), AIC or BIC: in case if several models are selected, using additional criterion to draw out the best model.}
 }
 \value{
-returns a dataframe of results
+returns a list of two dataframes of test results.
 }
 \description{
 Elhorst procedure
+}
+\examples{
+require(spatialreg)
+require(spdep)
+require(rgdal)
+columbus <- readOGR(system.file("shapes/columbus.shp", package="spData")[1])
+weights <- nb2listw(poly2nb(columbus))
+formula <- CRIME ~ INC + HOVAL
+
+elhorst(formula = formula, data = columbus, listw = weights, alpha = 0.05)
+elhorst(formula = formula, data = columbus,
+        listw = weights, alpha = 0.05, criterion = "AIC")
+elhorst(formula = CRIME ~ INC, data = columbus, listw = weights)
+}
+\references{
+Elhorst, J. P. (2010). Applied spatial econometrics: raising the bar. Spatial economic analysis, 5(1), 9-28.
 }

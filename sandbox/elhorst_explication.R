@@ -30,6 +30,7 @@
 
 elhorst <- function(formula, data, listw, alpha = 0.05, criterion = "RLM") {
 
+    ### VERIFICATION DES INPUTS
     if (!inherits(formula, "formula")) stop("No formula given", call. = F)
     if (!inherits(listw, "listw")) stop("No neighbourhood list", call. = F)
     if (!inherits(alpha, "numeric")) stop("Confidence level alpha is not numeric", call. = F)
@@ -48,14 +49,17 @@ elhorst <- function(formula, data, listw, alpha = 0.05, criterion = "RLM") {
     # Modele OLS
     ols <- lm(formula = formula, data = data)
 
+    # DF CONTENANT LES RESULTATS DES TESTS (R)LM
     df_lm <- data.frame(test = c("LMlag", "LMerr", "RLMlag", "RLMerr"),
                         stat = rep(NA, 4),
                         pvalue = rep(NA, 4))
 
+    # DF CONTENANT LES RESULTATS DES TESTS LR
     df_lr <- data.frame(vs = c("SDM vs SAR", "SLX vs OLS", "SDM vs SLX", "SDM vs SEM"),
                         stat = rep(NA, 4),
                         pvalue = rep(NA, 4))
 
+    # CONTIENDRA LES MODELES RETENUS
     selected_models <- c(NA, NA)
 
     # Test LM-Lag : H0 : rho = 0
@@ -82,7 +86,7 @@ elhorst <- function(formula, data, listw, alpha = 0.05, criterion = "RLM") {
     df_lm$stat[row] <- robust_lambda$RLMerr$statistic
     df_lm$pvalue[row] <- robust_lambda$RLMerr$p.value
 
-    if (rho$LMlag$p.value < alpha){
+    if (rho$LMlag$p.value < alpha){ # CAS GAUCHE
         sdm_vs_sar <- LR.sarlm(sdm, sar)
         row <- which(df_lr$vs == "SDM vs SAR")
         df_lr$stat[row] <- sdm_vs_sar$statistic
@@ -94,7 +98,7 @@ elhorst <- function(formula, data, listw, alpha = 0.05, criterion = "RLM") {
         }
     }
 
-    if (rho$LMlag$p.value > alpha & lambda$LMerr$p.value > alpha){
+    if (rho$LMlag$p.value > alpha & lambda$LMerr$p.value > alpha){ # CAS CENTRAL
         slx_vs_ols <- LR.sarlm(slx, ols)
         row <- which(df_lr$vs == "SLX vs OLS")
         df_lr$stat[row] <- slx_vs_ols$statistic
@@ -116,7 +120,7 @@ elhorst <- function(formula, data, listw, alpha = 0.05, criterion = "RLM") {
     }
 
 
-    if (lambda$LMerr$p.value < alpha){
+    if (lambda$LMerr$p.value < alpha){ # CAS DROITE
         sdm_vs_sem <- LR.sarlm(sdm, sem)
         row <- which(df_lr$vs == "SDM vs SEM")
         df_lr$stat[row] <- sdm_vs_sem$statistic
@@ -128,11 +132,11 @@ elhorst <- function(formula, data, listw, alpha = 0.05, criterion = "RLM") {
         }
     }
 
-    selected_models <- selected_models[!is.na(selected_models)]
-    selected_models <- unique(selected_models)
-    if (length(selected_models) == 1){
+    selected_models <- selected_models[!is.na(selected_models)] # IL EXISTE NA SI UN SEUL MODELE RETENU PARMI 2
+    selected_models <- unique(selected_models) # RETIRER DOUBLONS
+    if (length(selected_models) == 1){ # SI 1 SEUL MODEL, PAS BESOIN DE DEPARTAGER
         bestmodel <- selected_models
-    } else {
+    } else { # SINON COMPARER AIC BIC OU RLM
         if (criterion == "AIC"){
             info <- sapply(selected_models, function(x) { return(AIC(get(tolower(x))))})
             bestmodel <- names(info[order(info)][1])

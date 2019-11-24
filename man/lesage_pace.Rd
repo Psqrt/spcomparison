@@ -4,20 +4,37 @@
 \alias{lesage_pace}
 \title{LeSage and Pace procedure}
 \usage{
-lesage_pace(base, modele, matrice, alpha)
+lesage_pace(formula, data, listw, alpha = 0.05, criterion = "AIC")
 }
 \arguments{
-\item{base}{data}
+\item{formula}{a formula object (or one that can be coerced to that class): a symbolic description of the model to be fitted.}
 
-\item{modele}{formula}
+\item{data}{a data.frame object containing the variables in the model.}
 
-\item{matrice}{weights matrix}
+\item{listw}{a listw object containing weights.}
 
-\item{alpha}{confidence level between 0 and 1}
+\item{alpha}{a numeric value providing the confidence level between 0 and 1.}
+
+\item{criterion}{either AIC (default) or BIC: in case if several models are selected, using information criterion to draw out the best model.}
 }
 \value{
-returns a dataframe of results
+returns a data.frame object containing likelihood ratio tests information.
 }
 \description{
 LeSage and Pace procedure
+}
+\examples{
+require(spatialreg)
+require(spdep)
+require(rgdal)
+columbus <- readOGR(system.file("shapes/columbus.shp", package="spData")[1])
+weights <- nb2listw(poly2nb(columbus))
+formula <- CRIME ~ INC + HOVAL
+
+lesage_pace(formula = formula, data = columbus,
+            listw = weights, alpha = 0.05, criterion = "AIC")
+lesage_pace(formula = INC ~ CRIME, data = columbus, listw = weights)
+}
+\references{
+LeSage, J., & Pace, R. K. (2009). Introduction to spatial econometrics. Chapman and Hall/CRC.
 }

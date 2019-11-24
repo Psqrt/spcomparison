@@ -10,16 +10,14 @@
 #'
 #' @references LeSage, J., & Pace, R. K. (2009). Introduction to spatial econometrics. Chapman and Hall/CRC.
 #'
-#' @importFrom stats AIC BIC lm printCoefmat
+#' @importFrom stats AIC lm printCoefmat
 #' @import spatialreg
 #' @export
 #'
 #' @examples
 #' require(spatialreg)
-#' require(spdep)
-#' require(rgdal)
-#' columbus <- readOGR(system.file("shapes/columbus.shp", package="spData")[1])
-#' weights <- nb2listw(poly2nb(columbus))
+#' columbus <- rgdal::readOGR(system.file("shapes/columbus.shp", package="spData")[1])
+#' weights <- spdep::nb2listw(spdep::poly2nb(columbus))
 #' formula <- CRIME ~ INC + HOVAL
 #'
 #' lesage_pace(formula = formula, data = columbus,
@@ -28,6 +26,7 @@
 
 lesage_pace <- function(formula, data, listw, alpha = 0.05, criterion = "AIC") {
 
+    ### ICI GESTION DES ERREURS DES INPUTS #############################################
     if (!inherits(formula, "formula")) stop("No formula given", call. = F)
     if (!inherits(listw, "listw")) stop("No neighbourhood list", call. = F)
     if (!inherits(alpha, "numeric")) stop("Confidence level alpha is not numeric", call. = F)
@@ -49,14 +48,14 @@ lesage_pace <- function(formula, data, listw, alpha = 0.05, criterion = "AIC") {
     df <- data.frame(vs = c("SDM vs SAR", "SAR vs OLS", "SDM vs SLX", "SLX vs OLS", "SDM vs SEM", "SEM vs OLS"),
                      stat = rep(0, 6),
                      pvalue = rep(0, 6))
-    selected_models <- c()
+    selected_models <- c() # RÉCUPÈRE LES MODÈLES QUI SONT RETENUS PAR BRANCHE
 
     # H0 : theta = 0
     # Modele non contraint : SDM
     # Modele contraint : SAR
     # Si on rejette H0 alors on garde le modele non contraint, ie le modele SDM
     sdm_vs_sar <- LR.sarlm(sdm, sar)
-    row <- which(df$vs == "SDM vs SAR")
+    row <- which(df$vs == "SDM vs SAR") # POUR EVITER DE RÉPÉTER DEUX FOIS
     df$stat[row] <- sdm_vs_sar$statistic
     df$pvalue[row] <- sdm_vs_sar$p.value
 
@@ -66,7 +65,7 @@ lesage_pace <- function(formula, data, listw, alpha = 0.05, criterion = "AIC") {
         df$stat[row] <- sar_vs_ols$statistic
         df$pvalue[row] <- sar_vs_ols$p.value
         if (sar_vs_ols$p.value < alpha){
-            selected_models <- c(selected_models, "SAR")
+            selected_models <- c(selected_models, "SAR") # ON RECUPERE POUR PLUS TARD
         } else {
             selected_models <- c(selected_models, "OLS")
         }
@@ -126,19 +125,19 @@ lesage_pace <- function(formula, data, listw, alpha = 0.05, criterion = "AIC") {
         selected_models <- c(selected_models, "SDM")
     }
 
-    selected_models <- unique(selected_models)
+    selected_models <- unique(selected_models) # ON RETIRE LES DOUBLONS (DEUX BRANCHES PEUVENT DONNER OLS PAR EXEMPLE)
     if (length(selected_models) == 1){
-        bestmodel <- selected_models
-    } else {
+        bestmodel <- selected_models # SI Y A QU'UN SEUL MODELE, C'EST LE MEILLEUR
+    } else { # SINON S'IL Y A PLUSIEURS, FAUT TESTER PAR AIC BIC
         if (criterion == "AIC"){
             info <- sapply(selected_models, function(x) { return(AIC(get(tolower(x))))})
         } else {
             info <- sapply(selected_models, function(x) { return(BIC(get(tolower(x))))})
         }
-        bestmodel <- names(info[order(info)][1])
+        bestmodel <- names(info[order(info)][1]) # ON PREND CELUI QUI MINIMISE
     }
     rownames(df) <- df$vs
-    df["vs"] <- NULL
+    df["vs"] <- NULL # ON RETIRE LA COLONNE VS CAR C'EST PASSÉ EN ROWNAMES
     colnames(df) <- c("Likelihood ratio","p-value")
 
     cat("Formula:\n")
@@ -146,7 +145,7 @@ lesage_pace <- function(formula, data, listw, alpha = 0.05, criterion = "AIC") {
     cat("\nWeights matrix:\n")
     cat(deparse(substitute(listw)))
     cat("\n\nLikelihood ratio tests:\n")
-    printCoefmat(df, has.Pvalue = T, signif.legend = T, signif.stars = T, na.print = "-")
+    printCoefmat(df, has.Pvalue = T) # C'EST CETTE FONCTION QUI MET LES TABLEAUX EN FORME AVEC LES ÉTOILES ET TOUT
     if (length(selected_models) == 1){
         cat("\n--------------------------------------------------------------\nOnly one model was selected:\n")
         cat(bestmodel, "\n")
@@ -158,6 +157,6 @@ lesage_pace <- function(formula, data, listw, alpha = 0.05, criterion = "AIC") {
         cat("\nSelected model according to ", criterion, ":\n", sep = "")
         cat(bestmodel, "\n")
     }
-    return(invisible(df))
+    return(invisible(df)) # INVISIBLE PERMET DE NE PAS PRINT(DF) QUAND LE RÉSULTAT N'EST PAS ASSIGNÉ À UN OBJET
 }
 
